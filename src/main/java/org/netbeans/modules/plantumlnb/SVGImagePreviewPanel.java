@@ -71,7 +71,7 @@ public class SVGImagePreviewPanel extends JPanel {
     private SVGDocument currentDocument = null;
     private pumlDataObject currentDataObject;
     private static final double ZOOM_OUT_FACTOR = 0.9;
-    private static final String ROTATE_FACTOR = "0.0872664626";
+    private static final String ROTATE_FACTOR = "1.5708";
     private static final Logger logger = Logger.getLogger(SVGImagePreviewPanel.class.getName());
     private final RenderWithTransformGVTTreeRendererListener gvttrListener = new RenderWithTransformGVTTreeRendererListener();
     
@@ -93,7 +93,7 @@ public class SVGImagePreviewPanel extends JPanel {
         canvas.setEnableImageZoomInteractor(true);
         canvas.setEnablePanInteractor(true);
         canvas.setEnableResetTransformInteractor(true);
-        canvas.setEnableRotateInteractor(true);
+//        canvas.setEnableRotateInteractor(true);
         canvas.setEnableZoomInteractor(true);
         
         //add popup menu
