@@ -81,7 +81,7 @@ public class Toolbar {
         toolBar.add(getResetButton());
         toolBar.add(getCWRotateButton());
         toolBar.add(getCCWRotateButton());
-        toolBar.add(getOpenInBrowserButton());
+//        toolBar.add(getOpenInBrowserButton());
         toolBar.add(getQuickHelpLabel());
 
         return toolBar;
@@ -95,14 +95,8 @@ public class Toolbar {
     public JLabel getQuickHelpLabel() {
         JLabel label = new JLabel(ImageUtilities.loadImageIcon("/org/netbeans/modules/plantumlnb/help.png", true));
         label.setToolTipText("<html><body>"
-                + "<h4>Shortcuts</h4>"
-                + "<br>"
-                + "&rarr; <strong>Zoom</strong>         ( Ctrl + Left Click )<br>" 
-                + "&rarr; <strong>Realize zoom</strong> ( Shift + Right Click  )<br>" 
-                + "&rarr; <strong>Pan</strong>          ( SHIFT + Left Click )<br>" 
-                + "&rarr; <strong>Rotate</strong>       ( CTRL + Right Click )<br>" 
-                + "&rarr; <strong>Reset</strong>        ( CTRL + SHIFT + Right Click )<br>" 
-                + "<br>"
+                + "<h4>Zoom to Selection</h4>"
+                + "&rarr; Ctrl + Left Click Drag<br>" 
                 + "</body></html>"
         );
         return label;
@@ -114,6 +108,7 @@ public class Toolbar {
         try {
             Image img = ImageIO.read(getClass().getResource("/org/netbeans/modules/plantumlnb/save.png"));
             button.setIcon(new ImageIcon(img));
+				button.setToolTipText("Export");
         } catch (IOException e) {
             logger.log(Level.SEVERE, e.getLocalizedMessage()); 
         }
@@ -209,7 +204,7 @@ public class Toolbar {
             logger.log(Level.SEVERE, e.getLocalizedMessage());
         }
 
-        button.addActionListener(svgImagePreviewPanel.getOpenInBrowserAction());
+//        button.addActionListener(svgImagePreviewPanel.getOpenInBrowserAction());
 
         return button;
     }
