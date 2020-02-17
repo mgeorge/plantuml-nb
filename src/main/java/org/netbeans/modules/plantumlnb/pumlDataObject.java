@@ -68,7 +68,7 @@ import org.openide.windows.TopComponent;
 @MIMEResolver.ExtensionRegistration(
         displayName = "#LBL_PUML_LOADER",
 mimeType = "text/x-puml",
-extension = {"puml", "PUML"})
+extension = {"puml", "PUML", "pu", "PU"})
 @DataObject.Registration(
     mimeType = "text/x-puml",
 iconBase = "org/netbeans/modules/plantumlnb/icon.png",
@@ -198,7 +198,7 @@ public class pumlDataObject extends MultiDataObject implements FileChangeListene
 
                 tc.setCurrentDataObject(pumlDataObject.this);
 
-                tc.setNewContent(PUMLGenerator.getInstance().generateIntoString(fileObject, FileFormat.SVG));
+                tc.setNewContent(PUMLGenerator.getInstance().generateForPreview(fileObject, FileFormat.SVG));
             }
             
         });        

@@ -372,7 +372,7 @@ public final class PUMLTopComponent extends TopComponent implements Serializable
                 Iterator iter = fss.iterator();
                 while (iter.hasNext()) {
                     FileObject fo = (FileObject) iter.next();
-                    setNewContent(PUMLGenerator.getInstance().generateIntoString(fo, FileFormat.SVG));
+                    setNewContent(PUMLGenerator.getInstance().generateForPreview(fo, FileFormat.SVG));
                 }
 
                 if (panelUI == null) {
@@ -530,7 +530,7 @@ public final class PUMLTopComponent extends TopComponent implements Serializable
                 while (iter.hasNext()) {
                     FileObject fo = (FileObject) iter.next();
                     if(fo.getExt().toLowerCase().equals("puml")){
-                        setNewContent(PUMLGenerator.getInstance().generateIntoString(fo, FileFormat.SVG));
+                        setNewContent(PUMLGenerator.getInstance().generateForPreview(fo, FileFormat.SVG));
                     } else {
                         setDefaultContent();
                     }

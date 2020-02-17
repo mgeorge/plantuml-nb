@@ -23,11 +23,11 @@
  */
 package org.netbeans.modules.plantumlnb.ui.io;
 
-import java.io.BufferedWriter;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.file.Files;
 import java.util.Collections;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -35,7 +35,6 @@ import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
 import net.sourceforge.plantuml.preproc.Defines;
-import org.netbeans.modules.plantumlnb.PrettyPrinter;
 import org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel;
 import static org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel.DEFAULT_UTF8_ENCODING;
 import static org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel.DOT_MANUAL_MODE_DOT_PATH;
@@ -51,85 +50,76 @@ import org.openide.util.NbPreferences;
  */
 public class PUMLGenerator {
 
-    private static final Logger logger = Logger.getLogger(PUMLGenerator.class.getName());
-    private static PUMLGenerator INSTANCE;
+	private static final Logger logger = Logger.getLogger(PUMLGenerator.class.getName());
+	private static PUMLGenerator INSTANCE;
 
-    public static PUMLGenerator getInstance() {
-        if (null == INSTANCE) {
+	public static PUMLGenerator getInstance() {
+		if (null == INSTANCE) {
 
-            INSTANCE = new PUMLGenerator();
-        }
-        return INSTANCE;
-    }
+			INSTANCE = new PUMLGenerator();
+		}
+		return INSTANCE;
+	}
 
-    private PUMLGenerator() {
-    }
+	private PUMLGenerator() {
+	}
 
-    public String generateIntoString(FileObject inputFile, FileFormat fileFormat) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream();
-        try {
+	public byte[] generateIntoBytes(FileObject inputFile, FileFormat fileFormat) {
+		ByteArrayOutputStream os = new ByteArrayOutputStream();
+		try {
 
-            final boolean manual = NbPreferences.forModule(PlantUMLPanel.class).getBoolean(PlantUMLPanel.DOT_MANUAL_MODE, false);
-            if (manual) {
-                String path = NbPreferences.forModule(PlantUMLPanel.class).get(DOT_MANUAL_MODE_DOT_PATH, "");
-                System.setProperty("GRAPHVIZ_DOT", path);
-            } else {
-                System.clearProperty("GRAPHVIZ_DOT");
-            }
+			final boolean manual = NbPreferences.forModule(PlantUMLPanel.class).getBoolean(PlantUMLPanel.DOT_MANUAL_MODE, false);
+			if (manual) {
+				String path = NbPreferences.forModule(PlantUMLPanel.class).get(DOT_MANUAL_MODE_DOT_PATH, "");
+				System.setProperty("GRAPHVIZ_DOT", path);
+			} else {
+				System.clearProperty("GRAPHVIZ_DOT");
+			}
 
-            /**
-             * TODO: This particular constructor seems to use UTF-8 no matter which charset is passed as an argument.
-             * Replace this to use user specified charset in the future.
-             */
-//            SourceStringReader reader = new SourceStringReader(inputFile.asText(), FileUtil.toFile(inputFile).getParentFile());
-            String charset = NbPreferences.forModule(PlantUMLPanel.class).get(PLANTUML_ENCODING, DEFAULT_UTF8_ENCODING);
-            SourceStringReader reader = new SourceStringReader(new Defines(), 
-                    inputFile.asText(), 
-                    charset, 
-                    Collections.<String>emptyList(), 
-                    FileUtil.toFile(inputFile).getParentFile());
-            // Write the first image to "os"
-            String desc = reader.generateImage(os, new FileFormatOption(fileFormat));
-            return new String(os.toByteArray());
-        } catch (IOException ex) {
-            logger.log(Level.WARNING, ex.getMessage());
-        } finally {
-            try {
-                os.close();
-            } catch (IOException ex) {
-                logger.log(Level.WARNING, ex.getMessage());
-            }
-        }
-        return null;
-    }
+			String charset = NbPreferences.forModule(PlantUMLPanel.class).get(PLANTUML_ENCODING, DEFAULT_UTF8_ENCODING);
+			SourceStringReader reader = new SourceStringReader(new Defines(),
+					  inputFile.asText(),
+					  charset,
+					  Collections.<String>emptyList(),
+					  FileUtil.toFile(inputFile).getParentFile());
+			// Write the first image to "os"
+			reader.generateImage(os, new FileFormatOption(fileFormat));
 
+			return os.toByteArray();
+		} catch (IOException ex) {
+			logger.log(Level.WARNING, ex.getMessage());
+		} finally {
+			try {
+				os.close();
+			} catch (IOException ex) {
+				logger.log(Level.WARNING, ex.getMessage());
+			}
+		}
+		return null;
+	}
 
-public void generateIntoFile(FileObject inputFile, File outputFile, FileFormat fileFormat) {
-        String content = generateIntoString(inputFile, fileFormat);
-        FileWriter fw = null;
-        BufferedWriter bw = null;
-        try {
+	public String generateForPreview(FileObject inputFile, FileFormat fileFormat) {
 
-            outputFile.createNewFile();
-            fw = new FileWriter(outputFile);
-            bw = new BufferedWriter(fw);
-            bw.write(PrettyPrinter.formatXml(content));
-            bw.flush();
+		String charset = NbPreferences.forModule(PlantUMLPanel.class).get(PLANTUML_ENCODING, DEFAULT_UTF8_ENCODING);
 
-        } catch (IOException ex) {
-            logger.log(Level.WARNING, ex.getMessage());
-        } finally {
-            try {
-                if (fw != null) {
-                    fw.close();
-                }
-                if (bw != null) {
-                    bw.close();
-                }
-            } catch (IOException ex) {
-                logger.log(Level.WARNING, ex.getMessage());
-            }
-        }
-    }
+		try {
+			return new String(generateIntoBytes(inputFile, fileFormat), charset);
+		} catch (UnsupportedEncodingException ex) {
+			logger.log(Level.WARNING, ex.getMessage());
+		}
+		return null;
+	}
+
+	public void generateIntoFile(FileObject inputFile, File outputFile, FileFormat fileFormat) {
+		byte[] content = generateIntoBytes(inputFile, fileFormat);
+		try {
+
+			outputFile.createNewFile();
+			Files.write(outputFile.toPath(), content);
+
+		} catch (IOException ex) {
+			logger.log(Level.WARNING, ex.getMessage());
+		}
+	}
 
 }
