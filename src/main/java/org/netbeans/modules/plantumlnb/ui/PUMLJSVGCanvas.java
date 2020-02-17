@@ -23,22 +23,41 @@
  */
 package org.netbeans.modules.plantumlnb.ui;
 
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import org.apache.batik.swing.JSVGCanvas;
+import org.apache.batik.swing.gvt.AbstractPanInteractor;
+import org.apache.batik.swing.gvt.Interactor;
 
 /**
  *
  * @author Venkat Akkineni <sriguru@users.sourceforge.net>
  */
 public class PUMLJSVGCanvas extends JSVGCanvas {
-    
-    public static final String renderingTransformPropertyName = "renderingTransform";
-     
-    @Override
-    public void setRenderingTransform(AffineTransform newAt) {
-        AffineTransform oldAt = getRenderingTransform();
-        super.setRenderingTransform(newAt);
-        pcs.firePropertyChange(renderingTransformPropertyName, oldAt, newAt);
-    }
-    
+
+	public static final String renderingTransformPropertyName = "renderingTransform";
+
+	public PUMLJSVGCanvas() {
+
+		// remove old pan interactor		
+		getInteractors().remove(super.panInteractor);
+		
+		// add a new one that doens't require the SHIFT key
+		getInteractors().add(new AbstractPanInteractor() {
+			public boolean startInteraction(InputEvent ie) {
+				int mods = ie.getModifiers();
+				return ie.getID() == MouseEvent.MOUSE_PRESSED
+						  && (mods & InputEvent.BUTTON1_MASK) != 0;
+			}
+		});
+	}
+
+	@Override
+	public void setRenderingTransform(AffineTransform newAt) {
+		AffineTransform oldAt = getRenderingTransform();
+		super.setRenderingTransform(newAt);
+		pcs.firePropertyChange(renderingTransformPropertyName, oldAt, newAt);
+	}
+
 }
