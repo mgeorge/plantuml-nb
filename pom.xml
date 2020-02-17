@@ -155,15 +155,15 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>batik</groupId>
+            <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-swing</artifactId>
-            <version>1.6-1</version>
+            <version>1.12</version>
             <type>jar</type>
         </dependency>
         <dependency>
-            <groupId>batik</groupId>
+            <groupId>org.apache.xmlgraphics</groupId>
             <artifactId>batik-script</artifactId>
-            <version>1.6-1</version>
+            <version>1.12</version>
             <!-- exclude xerces as Netbeans includes it -->
             <exclusions>
                 <exclusion>
@@ -287,7 +287,8 @@
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
-                    <showDeprecation>true</showDeprecation>
+						  <showDeprecation>true</showDeprecation>
+						  <useIncrementalCompilation>false</useIncrementalCompilation>
                 </configuration>
             </plugin>
 
