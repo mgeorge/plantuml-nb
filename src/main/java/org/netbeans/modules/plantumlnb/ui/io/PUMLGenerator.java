@@ -85,11 +85,10 @@ public class PUMLGenerator {
 				final String source = inputFile.asText();
 				final String encoded = transcoder.encode(source);
 
-				// only hit the server if the string has changed
+				// only hit the server if the encoded diagram has changed
 				if (!lastImage.equals(encoded)) {
 					lastImage = encoded;
 
-					NotificationDisplayer.getDefault().notify("Generated string", NotificationDisplayer.Priority.NORMAL.getIcon(), encoded, null, NotificationDisplayer.Priority.NORMAL);
 					String uri = serverUri + "/svg/" + encoded;
 
 					Response httpResponse = new Request(uri).getResource();
@@ -97,7 +96,6 @@ public class PUMLGenerator {
 					if (httpResponse.getResponseCode() == 200) {
 
 						svg = httpResponse.getBody();
-
 						
 					} else {
 						String msg = httpResponse.getResponseMessage();
