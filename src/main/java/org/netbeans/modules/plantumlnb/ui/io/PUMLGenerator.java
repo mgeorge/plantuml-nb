@@ -23,10 +23,13 @@
  */
 package org.netbeans.modules.plantumlnb.ui.io;
 
+import com.joejernst.http.Request;
+import com.joejernst.http.Response;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Collections;
 import java.util.logging.Level;
@@ -34,11 +37,14 @@ import java.util.logging.Logger;
 import net.sourceforge.plantuml.FileFormat;
 import net.sourceforge.plantuml.FileFormatOption;
 import net.sourceforge.plantuml.SourceStringReader;
+import net.sourceforge.plantuml.code.Transcoder;
+import net.sourceforge.plantuml.code.TranscoderUtil;
 import net.sourceforge.plantuml.preproc.Defines;
 import org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel;
 import static org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel.DEFAULT_UTF8_ENCODING;
 import static org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel.DOT_MANUAL_MODE_DOT_PATH;
 import static org.netbeans.modules.plantumlnb.ui.options.PlantUMLPanel.PLANTUML_ENCODING;
+import org.openide.awt.NotificationDisplayer;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileUtil;
 import org.openide.util.NbPreferences;
@@ -52,6 +58,8 @@ public class PUMLGenerator {
 
 	private static final Logger logger = Logger.getLogger(PUMLGenerator.class.getName());
 	private static PUMLGenerator INSTANCE;
+	private static String lastImage="";
+	private static String svg="";
 
 	public static PUMLGenerator getInstance() {
 		if (null == INSTANCE) {
@@ -64,27 +72,58 @@ public class PUMLGenerator {
 	private PUMLGenerator() {
 	}
 
-	public byte[] generateIntoBytes(FileObject inputFile, FileFormat fileFormat) {
+	private byte[] generateIntoBytes(FileObject inputFile, FileFormat fileFormat) {
 		ByteArrayOutputStream os = new ByteArrayOutputStream();
 		try {
 
-			final boolean manual = NbPreferences.forModule(PlantUMLPanel.class).getBoolean(PlantUMLPanel.DOT_MANUAL_MODE, false);
-			if (manual) {
-				String path = NbPreferences.forModule(PlantUMLPanel.class).get(DOT_MANUAL_MODE_DOT_PATH, "");
-				System.setProperty("GRAPHVIZ_DOT", path);
+			final boolean server = NbPreferences.forModule(PlantUMLPanel.class).getBoolean(PlantUMLPanel.SERVER_MODE, false);
+
+			if (server) {
+				final String serverUri = NbPreferences.forModule(PlantUMLPanel.class).get(PlantUMLPanel.SERVER_URI, null);
+
+				final Transcoder transcoder = TranscoderUtil.getDefaultTranscoder();
+				final String source = inputFile.asText();
+				final String encoded = transcoder.encode(source);
+
+				// only hit the server if the string has changed
+				if (!lastImage.equals(encoded)) {
+					lastImage = encoded;
+
+					NotificationDisplayer.getDefault().notify("Generated string", NotificationDisplayer.Priority.NORMAL.getIcon(), encoded, null, NotificationDisplayer.Priority.NORMAL);
+					String uri = serverUri + "/svg/" + encoded;
+
+					Response httpResponse = new Request(uri).getResource();
+
+					if (httpResponse.getResponseCode() == 200) {
+
+						svg = httpResponse.getBody();
+
+						
+					} else {
+						String msg = httpResponse.getResponseMessage();
+						NotificationDisplayer.getDefault().notify("PlantUML Server Error", NotificationDisplayer.Priority.NORMAL.getIcon(), msg, null, NotificationDisplayer.Priority.NORMAL);
+					}
+				}
+				return svg.getBytes(Charset.forName("UTf-8"));
 			} else {
-				System.clearProperty("GRAPHVIZ_DOT");
+
+				final boolean manual = NbPreferences.forModule(PlantUMLPanel.class).getBoolean(PlantUMLPanel.DOT_MANUAL_MODE, false);
+				if (manual) {
+					String path = NbPreferences.forModule(PlantUMLPanel.class).get(DOT_MANUAL_MODE_DOT_PATH, "");
+					System.setProperty("GRAPHVIZ_DOT", path);
+				} else {
+					System.clearProperty("GRAPHVIZ_DOT");
+				}
+
+				String charset = NbPreferences.forModule(PlantUMLPanel.class).get(PLANTUML_ENCODING, DEFAULT_UTF8_ENCODING);
+				SourceStringReader reader = new SourceStringReader(new Defines(),
+						  inputFile.asText(),
+						  charset,
+						  Collections.<String>emptyList(),
+						  FileUtil.toFile(inputFile).getParentFile());
+				// Write the first image to "os"
+				reader.generateImage(os, new FileFormatOption(fileFormat));
 			}
-
-			String charset = NbPreferences.forModule(PlantUMLPanel.class).get(PLANTUML_ENCODING, DEFAULT_UTF8_ENCODING);
-			SourceStringReader reader = new SourceStringReader(new Defines(),
-					  inputFile.asText(),
-					  charset,
-					  Collections.<String>emptyList(),
-					  FileUtil.toFile(inputFile).getParentFile());
-			// Write the first image to "os"
-			reader.generateImage(os, new FileFormatOption(fileFormat));
-
 			return os.toByteArray();
 		} catch (IOException ex) {
 			logger.log(Level.WARNING, ex.getMessage());
